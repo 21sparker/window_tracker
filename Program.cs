@@ -4,6 +4,10 @@ using System;
 
 namespace WindowTracker
 {
+    /// <summary>
+    /// List of User32 Functions
+    /// http://www.pinvoke.net/default.aspx/user32.GetLastInputInfo
+    /// </summary>
     class Program
     {
         static void Main(string[] args)
