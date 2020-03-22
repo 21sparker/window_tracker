@@ -29,9 +29,10 @@ namespace WindowTracker
 
                     Console.WriteLine(proc.ProcessName + proc.Id + proc.Responding + ": " + proc.MainWindowTitle + " (" + proc.MainWindowHandle.ToString() + ")");
                     Console.WriteLine(proc.MainModule.FileName);
-
                 }
             }
+
+
             Console.ReadKey();
         }
     }
