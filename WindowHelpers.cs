@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -25,6 +22,11 @@ namespace WindowTracker
             public System.Drawing.Point rcNormalPosition;
         }
 
+        /// <summary>
+        /// Returns whether the window placement is visible
+        /// </summary>
+        /// <param name="hWnd"></param>
+        /// <returns></returns>
         public static bool WindowPlacementIsVisible(IntPtr hWnd)
         {
             WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
@@ -92,11 +94,62 @@ namespace WindowTracker
         }
         #endregion
 
+        //https://stackoverflow.com/questions/8431298/process-mainmodule-access-is-denied
+
         #region Get Process Exe File Path
-        public string GetProcessPath(Process proc)
+        [Flags]
+        private enum ProcessAccessFlags : uint
         {
-            return proc.MainModule.FileName;
+            QueryLimitedInformation = 0x00001000
         }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool QueryFullProcessImageName(
+            [In] IntPtr hProcess,
+            [In] int dwFlags,
+            [Out] StringBuilder lpExeName,
+            ref int lpdwSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr OpenProcess(
+            ProcessAccessFlags processAccess,
+            bool bInheritHandle,
+            int processId);
+
+        /// <summary>
+        /// Returns the executable path of the running process.
+        /// </summary>
+        /// <param name="process"></param>
+        /// <returns></returns>
+        public static string GetProcessFileName(Process process)
+        {
+            string processFileName = String.Empty;
+            try
+            {
+                processFileName = process.MainModule.FileName;
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                // do nothing, 'Access is denied' is an error I get with some applications (ex: Task Manager)
+            }
+
+            if (!String.IsNullOrEmpty(processFileName))
+            {
+                return processFileName;
+            }
+
+            int capacity = 2000;
+            StringBuilder builder = new StringBuilder(capacity);
+            IntPtr ptr = OpenProcess(ProcessAccessFlags.QueryLimitedInformation, false, process.Id);
+
+            if (!QueryFullProcessImageName(ptr, 0, builder, ref capacity))
+            {
+                return String.Empty;
+            }
+
+            return builder.ToString();
+        }
+
         #endregion
     }
 }
